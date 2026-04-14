@@ -1,8 +1,0 @@
-namespace TourPlanner.BL.HttpClients;
-
-public class OrsOptions
-{
-    public const string Section = "OpenRouteService";
-    public string ApiKey { get; set; } = string.Empty;
-    public string BaseUrl { get; set; } = "https://api.openrouteservice.org";
-}

@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tour Planner – Intermediate Submission Protocol</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #222; background: #fff; }
+    .page { width: 210mm; margin: 0 auto; padding: 20mm 20mm 18mm 20mm; }
+    h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    h2 { font-size: 17px; font-weight: 700; margin: 28px 0 10px 0; border-bottom: 2px solid #1a56db; padding-bottom: 4px; color: #1a56db; }
+    h3 { font-size: 13px; font-weight: 700; margin: 16px 0 6px 0; }
+    h4 { font-size: 12px; font-weight: 700; margin: 10px 0 4px 0; color: #444; }
+    p  { line-height: 1.6; margin-bottom: 8px; }
+    ul { padding-left: 20px; margin-bottom: 8px; line-height: 1.7; }
+    li { margin-bottom: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 12px; }
+    th { background: #1a56db; color: #fff; padding: 6px 10px; text-align: left; }
+    td { padding: 5px 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
+    tr:nth-child(even) td { background: #f5f8ff; }
+    .cover { text-align: center; padding: 40px 0 30px 0; border-bottom: 3px solid #1a56db; margin-bottom: 30px; }
+    .cover .subtitle { font-size: 16px; color: #555; margin-top: 8px; }
+    .cover .meta { margin-top: 20px; font-size: 13px; color: #444; line-height: 2; }
+    .badge-ok  { display: inline-block; background: #22c55e; color: #fff; border-radius: 4px; padding: 1px 8px; font-size: 11px; font-weight: 700; }
+    .badge-na  { display: inline-block; background: #f59e0b; color: #fff; border-radius: 4px; padding: 1px 8px; font-size: 11px; font-weight: 700; }
+    .wireframe { border: 1px solid #999; border-radius: 6px; background: #f9f9f9; font-family: monospace; font-size: 11px; padding: 12px 14px; margin: 8px 0 14px 0; line-height: 1.5; white-space: pre; overflow-x: auto; }
+    .mermaid { margin: 10px 0 16px 0; }
+    .note { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; }
+    .pagebreak { page-break-before: always; margin-top: 30px; }
+    code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 11px; font-family: monospace; }
+    @media print {
+      body { font-size: 12px; }
+      .page { padding: 15mm 18mm; }
+      .pagebreak { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+<!-- COVER -->
+<div class="cover">
+  <h1>Tour Planner</h1>
+  <div class="subtitle">Intermediate Submission Protocol</div>
+  <div class="meta">
+    <strong>Course:</strong> Software Engineering – 4th Semester<br/>
+    <strong>Team:</strong> Student 1 &amp; Student 2<br/>
+    <strong>Date:</strong> April 2026<br/>
+    <strong>Submission Stage:</strong> Intermediate (Class 13) – Web-Frontend &amp; Backend Integration
+  </div>
+</div>
+
+<!-- TOC -->
+<h2>Table of Contents</h2>
+<ol style="line-height:2; padding-left:22px;">
+  <li>Project Overview</li>
+  <li>Technology Stack &amp; Key Decisions</li>
+  <li>Technical Steps, Failures &amp; Solutions</li>
+  <li>Application Features (UML Use Case Diagram)</li>
+  <li>UI-Flow / Wireframes</li>
+  <li>Application Architecture (UML)</li>
+  <li>Unit Tests – Selection &amp; Justification</li>
+  <li>Time Tracking</li>
+</ol>
+
+<!-- 1 OVERVIEW -->
+<h2>1. Project Overview</h2>
+<p>
+  Tour Planner is a full-stack web application for planning and logging bike, hike, running, and vacation tours.
+  Users self-register, create tours, and record tour logs with statistics. Route data (distance, duration, map polyline)
+  is fetched live from the <strong>OpenRouteService.org</strong> REST API and displayed on an interactive
+  <strong>Leaflet</strong> map. The application runs in a three-container Docker Compose setup
+  (PostgreSQL + ASP.NET Core backend + Nginx/React frontend).
+</p>
+<p>
+  This intermediate submission covers the full working integration: authentication, tour CRUD, tour log CRUD,
+  map display, full-text search, and computed attributes (popularity, child-friendliness).
+</p>
+
+<!-- 2 TECH STACK -->
+<h2>2. Technology Stack &amp; Key Decisions</h2>
+
+<h3>2.1 Technology Choices</h3>
+<table>
+  <thead><tr><th>Layer</th><th>Technology</th><th>Reason</th></tr></thead>
+  <tbody>
+    <tr><td>Frontend framework</td><td>React 18 + TypeScript + Vite</td><td>Teacher-approved alternative to Angular. Faster build pipeline, strong type safety.</td></tr>
+    <tr><td>State management</td><td>Zustand + localStorage persistence</td><td>Minimal boilerplate for JWT auth state across page reloads.</td></tr>
+    <tr><td>HTTP client</td><td>Axios with interceptors</td><td>Auto-attaches Bearer token on every request; auto-redirects on 401.</td></tr>
+    <tr><td>Map</td><td>react-leaflet + Leaflet.js</td><td>Required by spec. Open-source, no API key needed for tile display.</td></tr>
+    <tr><td>Backend framework</td><td>ASP.NET Core Web API (.NET 10)</td><td>Required by spec. LTS release, modern minimal hosting model.</td></tr>
+    <tr><td>ORM</td><td>Entity Framework Core 10 + Npgsql</td><td>Required by spec. Code-first migrations, LINQ queries.</td></tr>
+    <tr><td>Database</td><td>PostgreSQL 16</td><td>Required by spec.</td></tr>
+    <tr><td>Authentication</td><td>JWT (HS256, 24h expiry)</td><td>Stateless, no server-side session storage needed.</td></tr>
+    <tr><td>Logging</td><td>log4net 3.0</td><td>Required by spec. Rolling file appender configured.</td></tr>
+    <tr><td>Testing</td><td>NUnit 4 + Moq + EF InMemory</td><td>Required by spec. Moq enables isolated unit tests; EF InMemory for repository tests.</td></tr>
+    <tr><td>Containerization</td><td>Docker Compose</td><td>One-command startup for all three containers.</td></tr>
+    <tr><td>Route API</td><td>OpenRouteService.org</td><td>Required by spec. Free geocoding + directions endpoint.</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 Architecture Decision: Repository Pattern</h3>
+<p>
+  The <strong>Repository Pattern</strong> was chosen as the primary design pattern. A generic
+  <code>IRepository&lt;T&gt;</code> base interface defines <code>GetByIdAsync</code>, <code>GetAllAsync</code>,
+  <code>AddAsync</code>, <code>UpdateAsync</code>, <code>DeleteAsync</code>. Concrete implementations
+  (<code>TourRepository</code>, <code>TourLogRepository</code>, <code>UserRepository</code>) extend this base and
+  add domain-specific queries (e.g. <code>GetByUserIdAsync</code>, <code>SearchAsync</code>). This decouples the BL
+  from EF Core and makes unit testing via mocks straightforward.
+</p>
+
+<h3>2.3 Architecture Decision: Layered Architecture</h3>
+<p>
+  The backend is split into three projects mirroring the three layers:
+</p>
+<ul>
+  <li><strong>TourPlanner.DAL</strong> – EF Core DbContext, entity classes, repository interfaces &amp; implementations</li>
+  <li><strong>TourPlanner.BL</strong> – Service interfaces &amp; implementations, ORS HTTP client, DTOs, JWT/auth logic</li>
+  <li><strong>TourPlanner.API</strong> – ASP.NET Core controllers, DI wiring, JWT middleware, CORS config</li>
+</ul>
+<p>
+  Dependency direction is strictly one-way: API → BL → DAL. No layer references a higher layer.
+</p>
+
+<!-- 3 FAILURES -->
+<div class="pagebreak"></div>
+<h2>3. Technical Steps, Failures &amp; Solutions</h2>
+
+<table>
+  <thead><tr><th>Issue</th><th>Root Cause</th><th>Solution</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>.NET SDK version mismatch on dev machine</td>
+      <td>Dev machine had .NET 7 SDK; project targets net10.0</td>
+      <td>Development and building done entirely inside Docker (Dockerfile pulls <code>mcr.microsoft.com/dotnet/sdk:10.0</code>). Local SDK not required.</td>
+    </tr>
+    <tr>
+      <td><code>npm ci</code> failed in Docker build</td>
+      <td>No <code>package-lock.json</code> existed (npm never ran locally)</td>
+      <td>Changed <code>RUN npm ci</code> → <code>RUN npm install</code> in frontend Dockerfile.</td>
+    </tr>
+    <tr>
+      <td>TypeScript errors: <code>ImportMeta.env</code> unknown, CSS module imports</td>
+      <td>Missing Vite type reference in the TypeScript project</td>
+      <td>Created <code>src/vite-env.d.ts</code> with <code>/// &lt;reference types="vite/client" /&gt;</code>.</td>
+    </tr>
+    <tr>
+      <td><code>System.FormatException</code> when ORS HTTP client was constructed</td>
+      <td>API key set via <code>HttpHeaders.Add("Authorization", rawKey)</code> — raw JWT without scheme prefix is invalid as a header value</td>
+      <td>Changed to <code>new AuthenticationHeaderValue("Bearer", _options.ApiKey)</code>.</td>
+    </tr>
+    <tr>
+      <td>"Failed to save tour." — tour creation returned 400</td>
+      <td>Frontend sends <code>TransportType</code> as string (<code>"Bike"</code>); ASP.NET Core System.Text.Json deserializes enums as integers by default</td>
+      <td>Added <code>JsonStringEnumConverter</code> to <code>AddControllers().AddJsonOptions(...)</code> in <code>Program.cs</code>.</td>
+    </tr>
+    <tr>
+      <td>ORS directions request hangs for 100 seconds</td>
+      <td>Default <code>HttpClient.Timeout</code> is 100 s; ORS occasionally slow for cycling routes</td>
+      <td>Set <code>_httpClient.Timeout = TimeSpan.FromSeconds(15)</code>. Failure is already non-fatal; tour saves without route data.</td>
+    </tr>
+    <tr>
+      <td><code>docker-compose version</code> attribute warning</td>
+      <td>Modern Docker Compose (v2) deprecated the top-level <code>version</code> field</td>
+      <td>Removed the <code>version: '3.9'</code> line from <code>docker-compose.yml</code>.</td>
+    </tr>
+    <tr>
+      <td><code>Microsoft.Extensions.Configuration.Memory</code> not found on NuGet</td>
+      <td>Package does not exist as standalone; functionality is built into the base package</td>
+      <td>Removed from <code>TourPlanner.Tests.csproj</code>; <code>AddInMemoryCollection</code> is available via <code>Microsoft.Extensions.Configuration</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- 4 USE CASE -->
+<div class="pagebreak"></div>
+<h2>4. Application Features – UML Use Case Diagram</h2>
+
+<div class="mermaid">
+flowchart LR
+    U(["👤 User"])
+
+    subgraph AUTH ["Authentication"]
+        UC1["Register"]
+        UC2["Login"]
+        UC3["Logout"]
+    end
+
+    subgraph TOURS ["Tour Management"]
+        UC4["Create Tour"]
+        UC5["View Tour List"]
+        UC6["View Tour Detail"]
+        UC7["Edit Tour"]
+        UC8["Delete Tour"]
+        UC9["Search Tours\n(full-text)"]
+        UC10["View Route on Map\n«uses Leaflet + ORS»"]
+    end
+
+    subgraph LOGS ["Tour Log Management"]
+        UC11["Add Tour Log"]
+        UC12["Edit Tour Log"]
+        UC13["Delete Tour Log"]
+        UC14["View Tour Logs"]
+    end
+
+    subgraph COMPUTED ["Computed Attributes"]
+        UC15["View Popularity"]
+        UC16["View Child-Friendliness"]
+    end
+
+    U --> UC1
+    U --> UC2
+    U --> UC3
+    U --> UC4
+    U --> UC5
+    U --> UC6
+    U --> UC7
+    U --> UC8
+    U --> UC9
+    UC4 --> UC10
+    UC6 --> UC10
+    UC6 --> UC14
+    UC6 --> UC15
+    UC6 --> UC16
+    U --> UC11
+    U --> UC12
+    U --> UC13
+</div>
+
+<h3>Feature Summary</h3>
+<table>
+  <thead><tr><th>Feature</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>User self-registration</td><td><span class="badge-ok">DONE</span></td><td>BCrypt password hashing</td></tr>
+    <tr><td>Login / JWT auth</td><td><span class="badge-ok">DONE</span></td><td>Token stored in localStorage via Zustand</td></tr>
+    <tr><td>Tour CRUD</td><td><span class="badge-ok">DONE</span></td><td>Create/Read/Update/Delete</td></tr>
+    <tr><td>Tour Log CRUD</td><td><span class="badge-ok">DONE</span></td><td>Multiple logs per tour</td></tr>
+    <tr><td>ORS route data (distance, duration)</td><td><span class="badge-ok">DONE</span></td><td>Fetched on tour create/update</td></tr>
+    <tr><td>Leaflet map with polyline</td><td><span class="badge-ok">DONE</span></td><td>Live-fetched on tour detail view</td></tr>
+    <tr><td>Full-text search</td><td><span class="badge-ok">DONE</span></td><td>Searches name, description, from, to, log comments</td></tr>
+    <tr><td>Popularity (computed)</td><td><span class="badge-ok">DONE</span></td><td>Number of tour logs</td></tr>
+    <tr><td>Child-friendliness (computed)</td><td><span class="badge-ok">DONE</span></td><td>Formula from avg difficulty, distance, time</td></tr>
+    <tr><td>Input validation</td><td><span class="badge-ok">DONE</span></td><td>Frontend form + backend service layer</td></tr>
+    <tr><td>Import / Export</td><td><span class="badge-na">FINAL</span></td><td>Planned for final submission</td></tr>
+    <tr><td>Unique feature</td><td><span class="badge-na">FINAL</span></td><td>Planned for final submission</td></tr>
+  </tbody>
+</table>
+
+<!-- 5 WIREFRAMES -->
+<div class="pagebreak"></div>
+<h2>5. UI-Flow / Wireframes</h2>
+
+<h3>5.1 Login Page</h3>
+<div class="wireframe">┌─────────────────────────────────────────────────┐
+│              🗺  Tour Planner                   │
+│                                                 │
+│         ┌──────────────────────────┐            │
+│  Email  │ user@example.com         │            │
+│         └──────────────────────────┘            │
+│         ┌──────────────────────────┐            │
+│  Pass.  │ ••••••••                 │            │
+│         └──────────────────────────┘            │
+│                                                 │
+│              [ Login ]                          │
+│         Don't have an account? Register         │
+└─────────────────────────────────────────────────┘</div>
+
+<h3>5.2 Tours List Page</h3>
+<div class="wireframe">┌───────────────────────────────────────────────────────────────┐
+│  🗺 Tour Planner          [Search: __________] [🔍] [Logout]  │
+├───────────────────────────────────────────────────────────────┤
+│  My Tours                                   [+ New Tour]      │
+│                                                               │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  Vienna → Salzburg              🚲 Bike  [Edit][Delete]  │  │
+│  │  Distance: 295 km  ~180 min  Popularity: 3  Child: ⭐⭐  │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  Alps Hike                      🥾 Hike  [Edit][Delete]  │  │
+│  │  Distance: 18 km   ~240 min  Popularity: 1  Child: ⭐    │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  Summer Road Trip              🚗 Vac.   [Edit][Delete]  │  │
+│  │  Distance: 540 km  ~320 min  Popularity: 0  Child: N/A   │  │
+│  └─────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────┘</div>
+
+<h3>5.3 Create / Edit Tour Form</h3>
+<div class="wireframe">┌───────────────────────────────────────────────────────────┐
+│  New Tour                                      [Cancel]    │
+│                                                            │
+│  Name         [________________________]                   │
+│  Description  [________________________]                   │
+│  From         [________________________]                   │
+│  To           [________________________]                   │
+│  Transport    ( Bike ) ( Hike ) ( Running ) ( Vacation )   │
+│                                                            │
+│              [Create Tour]                                 │
+└───────────────────────────────────────────────────────────┘</div>
+
+<h3>5.4 Tour Detail Page</h3>
+<div class="wireframe">┌────────────────────────────────────────────────────────────────────┐
+│  ← Back                                                            │
+│                                                                    │
+│  Vienna → Salzburg    [Bike]        [Edit Tour]  [Delete Tour]     │
+│  Distance: 295 km  ~180 min  Popularity: 3  Moderately child-fri.  │
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                                                              │  │
+│  │                  [ Leaflet Map ]                             │  │
+│  │              (route polyline + markers)                      │  │
+│  │                                                              │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                                                    │
+│  Tour Logs (3)                                   [+ Add Log]       │
+│  ┌────────────────────────────────────────────────────────────┐    │
+│  │  2026-04-10  Diff: 3/5  Dist: 285km  Time: 175min  ⭐⭐⭐⭐  │    │
+│  │  "Great weather, roads were excellent."    [Edit][Delete]  │    │
+│  └────────────────────────────────────────────────────────────┘    │
+└────────────────────────────────────────────────────────────────────┘</div>
+
+<h3>5.5 UI Navigation Flow</h3>
+<div class="mermaid">
+flowchart TD
+    A["/login"] -->|credentials ok| B["/  Tours List"]
+    A -->|no account| C["/register"]
+    C -->|registered| A
+    B -->|click tour| D["/tours/:id  Detail"]
+    B -->|New Tour form| B
+    D -->|Back| B
+    D -->|Edit| D
+    D -->|Delete| B
+    D -->|Add Log form| D
+    B -->|Logout| A
+</div>
+
+<!-- 6 ARCHITECTURE -->
+<div class="pagebreak"></div>
+<h2>6. Application Architecture – UML</h2>
+
+<h3>6.1 System Overview</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph BROWSER ["Browser"]
+        FE["React SPA\n(Vite + TypeScript)\nZustand · Axios · Leaflet"]
+    end
+    subgraph DOCKER ["Docker Compose"]
+        subgraph API_LAYER ["TourPlanner.API (.NET 10)"]
+            CTRL["Controllers\nAuthController\nToursController\nTourLogsController\nRouteController"]
+        end
+        subgraph BL_LAYER ["TourPlanner.BL"]
+            SVC["Services\nAuthService\nTourService\nTourLogService\nRouteService"]
+            ORS["OpenRouteServiceClient\n(HttpClient)"]
+        end
+        subgraph DAL_LAYER ["TourPlanner.DAL"]
+            REPO["Repositories\nUserRepository\nTourRepository\nTourLogRepository"]
+            CTX["TourPlannerDbContext\n(EF Core)"]
+        end
+        PG[("PostgreSQL 16")]
+    end
+    EXT["OpenRouteService.org\nREST API"]
+
+    FE -->|"HTTP/JSON (JWT Bearer)"| CTRL
+    CTRL --> SVC
+    SVC --> ORS
+    ORS -->|HTTPS| EXT
+    SVC --> REPO
+    REPO --> CTX
+    CTX -->|"Npgsql"| PG
+</div>
+
+<h3>6.2 Class Diagram (simplified, key relationships)</h3>
+<div class="mermaid">
+classDiagram
+    class IRepository~T~ {
+        <<interface>>
+        +GetByIdAsync(id) Task~T~
+        +GetAllAsync() Task~IEnumerable~T~~
+        +AddAsync(entity) Task
+        +UpdateAsync(entity) Task
+        +DeleteAsync(id) Task
+    }
+    class TourRepository {
+        +GetByUserIdAsync(userId) Task~IEnumerable~Tour~~
+        +SearchAsync(query, userId) Task~IEnumerable~Tour~~
+        +GetWithLogsAsync(tourId) Task~Tour~
+    }
+    class TourLogRepository {
+        +GetByTourIdAsync(tourId) Task~IEnumerable~TourLog~~
+    }
+    class UserRepository {
+        +GetByEmailAsync(email) Task~User~
+        +GetByUsernameAsync(username) Task~User~
+    }
+    IRepository~T~ <|-- TourRepository
+    IRepository~T~ <|-- TourLogRepository
+    IRepository~T~ <|-- UserRepository
+
+    class Tour {
+        +Guid Id
+        +string Name
+        +string From
+        +string To
+        +TransportType TransportType
+        +double Distance
+        +int EstimatedTime
+        +Guid UserId
+        +List~TourLog~ TourLogs
+    }
+    class TourLog {
+        +Guid Id
+        +Guid TourId
+        +DateTime DateTime
+        +string Comment
+        +int Difficulty
+        +double TotalDistance
+        +int TotalTime
+        +int Rating
+    }
+    class User {
+        +Guid Id
+        +string Username
+        +string Email
+        +string PasswordHash
+    }
+    Tour "1" --> "*" TourLog : has
+    User "1" --> "*" Tour : owns
+
+    class TourService {
+        +GetToursAsync(userId)
+        +CreateTourAsync(request, userId)
+        +UpdateTourAsync(tourId, request, userId)
+        +DeleteTourAsync(tourId, userId)
+        +SearchToursAsync(query, userId)
+        -ComputeChildFriendliness(logs)
+    }
+    class AuthService {
+        +RegisterAsync(request)
+        +LoginAsync(request)
+        -GenerateToken(user)
+    }
+    TourService --> TourRepository
+    TourService --> IOpenRouteServiceClient
+    AuthService --> UserRepository
+</div>
+
+<h3>6.3 Sequence Diagram – Full-Text Search</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant U as User (Browser)
+    participant TS as TourSearch Component
+    participant TP as ToursPage
+    participant AX as Axios Client
+    participant TC as ToursController
+    participant SVC as TourService
+    participant REPO as TourRepository
+    participant DB as PostgreSQL
+
+    U->>TS: types query, clicks Search
+    TS->>TP: onSearch(query)
+    TP->>AX: GET /api/tours/search?q=query
+    AX->>AX: attach Bearer token (interceptor)
+    AX->>TC: GET /api/tours/search?q=query
+    TC->>TC: extract userId from JWT claims
+    TC->>SVC: SearchToursAsync(query, userId)
+    SVC->>REPO: SearchAsync(query, userId)
+    REPO->>DB: SELECT ... WHERE userId=@ AND\n(lower(Name) LIKE % OR lower(Description) LIKE %\nOR lower(From) LIKE % OR lower(To) LIKE %\nOR EXISTS (SELECT 1 FROM TourLogs\n  WHERE lower(Comment) LIKE %))
+    DB-->>REPO: matching Tour rows + TourLogs
+    REPO-->>SVC: IEnumerable&lt;Tour&gt;
+    SVC->>SVC: MapToResponse() for each tour\n(compute popularity, child-friendliness)
+    SVC-->>TC: IEnumerable&lt;TourResponse&gt;
+    TC-->>AX: 200 OK [ TourResponse[] ]
+    AX-->>TP: data: Tour[]
+    TP->>TP: setTours(data)
+    TP-->>U: updated tour list rendered
+</div>
+
+<!-- 7 UNIT TESTS -->
+<div class="pagebreak"></div>
+<h2>7. Unit Tests – Selection &amp; Justification</h2>
+
+<p>
+  The test suite contains <strong>33 NUnit tests</strong> across two categories:
+  service-layer tests (using Moq to mock repositories) and repository-layer tests
+  (using EF Core InMemory database). This ensures both the business logic and the
+  data access layer are covered independently.
+</p>
+
+<h3>7.1 Service Tests (via Moq)</h3>
+
+<table>
+  <thead><tr><th>Test Class</th><th># Tests</th><th>What is tested</th><th>Why critical</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>AuthServiceTests</td>
+      <td>8</td>
+      <td>
+        Register success; duplicate email; duplicate username;
+        password too short; empty username; login success; wrong password; unknown email
+      </td>
+      <td>
+        Authentication is the security boundary of the entire application.
+        Bugs here allow account takeover or data leakage. BCrypt hashing,
+        JWT generation, and input validation must all work correctly together.
+      </td>
+    </tr>
+    <tr>
+      <td>TourServiceTests</td>
+      <td>7</td>
+      <td>
+        Create with valid data; create with empty name (throws); update by owner;
+        update by non-owner (throws UnauthorizedAccess); delete by non-owner;
+        delete by owner; get tours; search returns matching tours
+      </td>
+      <td>
+        TourService contains the core business logic including ownership checks.
+        Without tests, a bug in the ownership guard could allow any user to
+        modify or delete another user's tour data.
+      </td>
+    </tr>
+    <tr>
+      <td>TourLogServiceTests</td>
+      <td>7</td>
+      <td>
+        Create log success; difficulty out of range (1–5); rating out of range (1–5);
+        get logs for tour; attempt to get logs for another user's tour;
+        delete own log; delete non-owned log (forbidden)
+      </td>
+      <td>
+        Tour logs store user-entered statistics used to compute popularity and
+        child-friendliness. Invalid difficulty/rating values would corrupt computed
+        results. Ownership tests prevent cross-user data access.
+      </td>
+    </tr>
+    <tr>
+      <td>RouteServiceTests</td>
+      <td>3</td>
+      <td>
+        Valid route returns distance + duration; geocoding failure returns null gracefully;
+        directions failure returns null gracefully
+      </td>
+      <td>
+        RouteService wraps the external ORS API. External APIs are unreliable
+        (network timeouts, rate limits). Tests verify the service degrades gracefully
+        so a failed ORS call does not crash tour creation.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>7.2 Repository Tests (EF Core InMemory)</h3>
+
+<table>
+  <thead><tr><th>Test Class</th><th># Tests</th><th>What is tested</th><th>Why critical</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>TourRepositoryTests</td>
+      <td>5</td>
+      <td>
+        Add and retrieve by Id; get tours by userId (only own tours returned);
+        full-text search by name; delete removes from DB; update persists changes
+      </td>
+      <td>
+        The repository is the only point that touches the database. Bugs here
+        (e.g. wrong WHERE clause on userId) would expose all users' tours.
+        The search query is complex SQL and must be verified independently.
+      </td>
+    </tr>
+    <tr>
+      <td>TourLogRepositoryTests</td>
+      <td>3</td>
+      <td>
+        Add log and retrieve by tourId; logs of other tours not returned;
+        delete removes only target log
+      </td>
+      <td>
+        TourLogs are the source of computed attributes. Incorrect filtering would
+        mix logs from different tours, corrupting popularity and child-friendliness values.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>Test strategy:</strong> Service tests use Moq to isolate business logic from the database entirely —
+  any failure points to the service code, not the ORM. Repository tests use EF Core InMemory to verify
+  LINQ queries produce correct SQL semantics without requiring a real PostgreSQL instance in CI.
+</div>
+
+<!-- 8 TIME TRACKING -->
+<h2>8. Time Tracking</h2>
+
+<div class="note">Update actual hours below before submission.</div>
+
+<table>
+  <thead><tr><th>Task</th><th>Student 1 (h)</th><th>Student 2 (h)</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Requirements analysis &amp; architecture design</td><td>3</td><td>3</td><td>Choosing tech stack, designing layers</td></tr>
+    <tr><td>DAL: Entities, DbContext, Repositories</td><td>5</td><td>3</td><td>EF Core setup, migrations</td></tr>
+    <tr><td>BL: Services, DTOs, AuthService, TourService, TourLogService</td><td>5</td><td>5</td><td>Business logic, BCrypt, JWT</td></tr>
+    <tr><td>BL: OpenRouteService HTTP client</td><td>3</td><td>2</td><td>Geocoding + directions integration</td></tr>
+    <tr><td>API: Controllers, Program.cs, JWT middleware, CORS</td><td>3</td><td>3</td><td>REST endpoints, DI wiring</td></tr>
+    <tr><td>Frontend: Scaffolding, Zustand store, Axios client</td><td>2</td><td>3</td><td>Auth flow, API client setup</td></tr>
+    <tr><td>Frontend: Tour pages (list, form, detail)</td><td>4</td><td>4</td><td>React components, routing</td></tr>
+    <tr><td>Frontend: Leaflet map integration</td><td>2</td><td>2</td><td>react-leaflet, coordinate conversion</td></tr>
+    <tr><td>Docker Compose setup &amp; debugging</td><td>3</td><td>3</td><td>Multi-stage builds, env vars, healthchecks</td></tr>
+    <tr><td>Unit tests (33 tests)</td><td>4</td><td>4</td><td>NUnit, Moq, EF InMemory</td></tr>
+    <tr><td>Bug fixing (enum serialization, ORS key format, timeouts)</td><td>3</td><td>2</td><td>See Section 3</td></tr>
+    <tr><td>Protocol documentation</td><td>2</td><td>2</td><td>This document</td></tr>
+    <tr><td style="font-weight:700">Total</td><td style="font-weight:700">39</td><td style="font-weight:700">36</td><td></td></tr>
+  </tbody>
+</table>
+
+<hr style="margin: 30px 0; border-color: #ccc;" />
+<p style="text-align:center; color:#888; font-size:11px;">
+  Tour Planner – Intermediate Submission Protocol | 4th Semester Software Engineering | April 2026
+</p>
+
+</div>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+</script>
+</body>
+</html>
