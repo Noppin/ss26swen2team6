@@ -1,0 +1,28 @@
+# Backend
+backend/*/bin/
+backend/*/obj/
+backend/**/*.user
+backend/**/appsettings.json
+backend/**/appsettings.Development.json
+backend/**/appsettings.Production.json
+backend/**/logs/
+*.nupkg
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.production
+
+# Docker
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/settings.json
+*.suo
+*.swp
