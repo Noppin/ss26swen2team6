@@ -49,6 +49,9 @@ public class TourService : ITourService
             UserId = userId
         };
 
+        if (request.ImagePath != null)
+            tour.RouteImagePath = request.ImagePath;
+
         await FetchRouteDataAsync(tour);
         await _tourRepo.AddAsync(tour);
         Log.Info($"Tour created: {tour.Name} (id={tour.Id})");
@@ -69,6 +72,9 @@ public class TourService : ITourService
         tour.To = request.To;
         tour.TransportType = request.TransportType;
         tour.UpdatedAt = DateTime.UtcNow;
+
+        if (request.ImagePath != null)
+            tour.RouteImagePath = request.ImagePath;
 
         if (routeChanged)
             await FetchRouteDataAsync(tour);
@@ -104,6 +110,17 @@ public class TourService : ITourService
                 {
                     tour.Distance = route.Value.distance;
                     tour.EstimatedTime = route.Value.duration;
+                }
+
+                // Only set static map URL if user did not upload a custom image
+                if (tour.RouteImagePath == null)
+                {
+                    double midLat = (fromCoords.Value.lat + toCoords.Value.lat) / 2.0;
+                    double midLon = (fromCoords.Value.lon + toCoords.Value.lon) / 2.0;
+                    tour.RouteImagePath = $"https://staticmap.openstreetmap.de/staticmap.php" +
+                        $"?center={midLat:F4},{midLon:F4}&zoom=8&size=400x250" +
+                        $"&markers={fromCoords.Value.lat:F4},{fromCoords.Value.lon:F4},red-pushpin" +
+                        $"|{toCoords.Value.lat:F4},{toCoords.Value.lon:F4},green-pushpin";
                 }
             }
         }

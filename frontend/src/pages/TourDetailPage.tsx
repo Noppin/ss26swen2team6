@@ -37,9 +37,9 @@ export default function TourDetailPage() {
     }
   }, [selectedTour, fetchRoute]);
 
-  const handleUpdate = async (data: UpdateTourRequest) => {
+  const handleUpdate = async (data: UpdateTourRequest, image?: File | null) => {
     if (!id) return;
-    await editTour(id, data);
+    await editTour(id, data, image);
     setEditing(false);
   };
 
@@ -92,7 +92,7 @@ export default function TourDetailPage() {
               {selectedTour.description && <p style={{ fontSize: 14, color: '#374151', marginBottom: 8 }}>{selectedTour.description}</p>}
               {selectedTour.routeImagePath && (
                 <img
-                  src={`/api${selectedTour.routeImagePath}`}
+                  src={selectedTour.routeImagePath}
                   alt={`${selectedTour.name} route`}
                   style={{ maxWidth: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 6, marginBottom: 8 }}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}

@@ -11,8 +11,8 @@ export default function ToursPage() {
 
   useEffect(() => { void fetchTours(); }, [fetchTours]);
 
-  const handleCreate = async (data: CreateTourRequest) => {
-    await addTour(data);
+  const handleCreate = async (data: CreateTourRequest, image?: File | null) => {
+    await addTour(data, image);
     setShowForm(false);
   };
 

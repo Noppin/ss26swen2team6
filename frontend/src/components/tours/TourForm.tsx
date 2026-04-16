@@ -3,7 +3,7 @@ import type { CreateTourRequest, Tour, TransportType } from '../../types/tour.ty
 
 interface Props {
   initial?: Tour;
-  onSubmit: (data: CreateTourRequest) => Promise<void>;
+  onSubmit: (data: CreateTourRequest, image?: File | null) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -15,8 +15,18 @@ export default function TourForm({ initial, onSubmit, onCancel }: Props) {
   const [from, setFrom] = useState(initial?.from ?? '');
   const [to, setTo] = useState(initial?.to ?? '');
   const [transportType, setTransportType] = useState<TransportType>(initial?.transportType ?? 'Bike');
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(initial?.routeImagePath ?? null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setImage(file);
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +37,7 @@ export default function TourForm({ initial, onSubmit, onCancel }: Props) {
     }
     setLoading(true);
     try {
-      await onSubmit({ name, description, from, to, transportType });
+      await onSubmit({ name, description, from, to, transportType }, image);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? 'Failed to save tour.');
@@ -64,6 +74,17 @@ export default function TourForm({ initial, onSubmit, onCancel }: Props) {
         <select value={transportType} onChange={(e) => setTransportType(e.target.value as TransportType)}>
           {TRANSPORT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
+      </div>
+      <div>
+        <label className="label">Tour Image</label>
+        <input type="file" accept="image/*" onChange={handleImageChange} />
+        {preview && (
+          <img
+            src={preview}
+            alt="Preview"
+            style={{ marginTop: 8, maxHeight: 150, maxWidth: '100%', objectFit: 'cover', borderRadius: 6 }}
+          />
+        )}
       </div>
       {error && <p className="error">{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>

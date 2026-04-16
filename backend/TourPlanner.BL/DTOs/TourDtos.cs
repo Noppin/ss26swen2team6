@@ -7,7 +7,8 @@ public record CreateTourRequest(
     string Description,
     string From,
     string To,
-    TransportType TransportType
+    TransportType TransportType,
+    string? ImagePath = null
 );
 
 public record UpdateTourRequest(
@@ -15,7 +16,8 @@ public record UpdateTourRequest(
     string Description,
     string From,
     string To,
-    TransportType TransportType
+    TransportType TransportType,
+    string? ImagePath = null
 );
 
 public record TourResponse(

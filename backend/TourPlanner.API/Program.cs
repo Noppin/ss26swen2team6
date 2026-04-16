@@ -100,6 +100,24 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Serve uploaded images at /images/{filename}
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
+Directory.CreateDirectory(uploadsPath);
+var mimeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+mimeProvider.Mappings[".png"] = "image/png";
+mimeProvider.Mappings[".jpg"] = "image/jpeg";
+mimeProvider.Mappings[".jpeg"] = "image/jpeg";
+mimeProvider.Mappings[".gif"] = "image/gif";
+mimeProvider.Mappings[".webp"] = "image/webp";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/images",
+    ContentTypeProvider = mimeProvider
+});
+
 app.MapControllers();
 
 log.Info("TourPlanner API starting...");

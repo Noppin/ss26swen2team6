@@ -13,8 +13,8 @@ interface TourState {
   fetchTours: () => Promise<void>;
   fetchTourById: (id: string) => Promise<void>;
   fetchRoute: (from: string, to: string, type: Tour['transportType']) => Promise<void>;
-  addTour: (data: CreateTourRequest) => Promise<void>;
-  editTour: (id: string, data: UpdateTourRequest) => Promise<void>;
+  addTour: (data: CreateTourRequest, image?: File | null) => Promise<void>;
+  editTour: (id: string, data: UpdateTourRequest, image?: File | null) => Promise<void>;
   removeTour: (id: string) => Promise<void>;
   clearSelectedTour: () => void;
 }
@@ -59,13 +59,13 @@ export const useTourStore = create<TourState>((set) => ({
     }
   },
 
-  addTour: async (data) => {
-    const tour = await createTour(data);
+  addTour: async (data, image) => {
+    const tour = await createTour(data, image);
     set((state) => ({ tours: [...state.tours, tour] }));
   },
 
-  editTour: async (id, data) => {
-    const updated = await updateTour(id, data);
+  editTour: async (id, data, image) => {
+    const updated = await updateTour(id, data, image);
     set((state) => ({
       tours: state.tours.map((t) => (t.id === id ? updated : t)),
       selectedTour: updated,

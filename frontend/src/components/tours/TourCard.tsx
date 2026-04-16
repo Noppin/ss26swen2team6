@@ -13,7 +13,7 @@ export default function TourCard({ tour, onDelete }: Props) {
     <div className="card" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
       {tour.routeImagePath && (
         <img
-          src={`/api${tour.routeImagePath}`}
+          src={tour.routeImagePath}
           alt={`${tour.name} route`}
           style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}

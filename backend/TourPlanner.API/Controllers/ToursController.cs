@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TourPlanner.BL.DTOs;
 using TourPlanner.BL.Services.Interfaces;
+using TourPlanner.DAL.Entities.Enums;
 
 namespace TourPlanner.API.Controllers;
 
@@ -12,8 +13,13 @@ namespace TourPlanner.API.Controllers;
 public class ToursController : ControllerBase
 {
     private readonly ITourService _tourService;
+    private readonly IWebHostEnvironment _env;
 
-    public ToursController(ITourService tourService) => _tourService = tourService;
+    public ToursController(ITourService tourService, IWebHostEnvironment env)
+    {
+        _tourService = tourService;
+        _env = env;
+    }
 
     private Guid UserId => Guid.Parse(
         User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -35,10 +41,19 @@ public class ToursController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateTourRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Create(
+        [FromForm] string name,
+        [FromForm] string description,
+        [FromForm] string from,
+        [FromForm] string to,
+        [FromForm] TransportType transportType,
+        IFormFile? image)
     {
         try
         {
+            string? imagePath = await SaveImageAsync(image);
+            var request = new CreateTourRequest(name, description, from, to, transportType, imagePath);
             var tour = await _tourService.CreateTourAsync(request, UserId);
             return CreatedAtAction(nameof(GetById), new { id = tour.Id }, tour);
         }
@@ -46,10 +61,20 @@ public class ToursController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTourRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromForm] string name,
+        [FromForm] string description,
+        [FromForm] string from,
+        [FromForm] string to,
+        [FromForm] TransportType transportType,
+        IFormFile? image)
     {
         try
         {
+            string? imagePath = await SaveImageAsync(image);
+            var request = new UpdateTourRequest(name, description, from, to, transportType, imagePath);
             var tour = await _tourService.UpdateTourAsync(id, request, UserId);
             return Ok(tour);
         }
@@ -68,5 +93,22 @@ public class ToursController : ControllerBase
         }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    private async Task<string?> SaveImageAsync(IFormFile? image)
+    {
+        if (image == null || image.Length == 0) return null;
+
+        var uploadsDir = Path.Combine(_env.ContentRootPath, "uploads");
+        Directory.CreateDirectory(uploadsDir);
+
+        var ext = Path.GetExtension(image.FileName).ToLowerInvariant();
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await image.CopyToAsync(stream);
+
+        return $"/images/{fileName}";
     }
 }
