@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getTourById, updateTour, deleteTour } from '../api/tours.api';
-import { getTourLogs, createTourLog, updateTourLog, deleteTourLog } from '../api/tourLogs.api';
-import { getRoute } from '../api/route.api';
-import type { Tour, UpdateTourRequest, RouteData } from '../types/tour.types';
+import { useTourStore } from '../store/tourStore';
+import { useTourLogStore } from '../store/tourLogStore';
+import type { UpdateTourRequest } from '../types/tour.types';
 import type { TourLog, CreateTourLogRequest } from '../types/tourLog.types';
 import TourForm from '../components/tours/TourForm';
 import TourLogList from '../components/tourLogs/TourLogList';
@@ -15,74 +14,60 @@ export default function TourDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [tour, setTour] = useState<Tour | null>(null);
-  const [logs, setLogs] = useState<TourLog[]>([]);
-  const [routeData, setRouteData] = useState<RouteData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { selectedTour, routeData, loading, error, fetchTourById, fetchRoute, editTour, removeTour, clearSelectedTour } = useTourStore();
+  const { logs, fetchLogs, addLog, editLog, removeLog, clearLogs } = useTourLogStore();
+
   const [editing, setEditing] = useState(false);
   const [showLogForm, setShowLogForm] = useState(false);
   const [editingLog, setEditingLog] = useState<TourLog | null>(null);
-  const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
+  useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    setError('');
-    try {
-      const [tourData, logData] = await Promise.all([getTourById(id), getTourLogs(id)]);
-      setTour(tourData);
-      setLogs(logData);
-      // Fetch route for map
-      try {
-        const route = await getRoute(tourData.from, tourData.to, tourData.transportType);
-        setRouteData(route);
-      } catch {
-        // Route fetch failure is non-critical
-      }
-    } catch {
-      setError('Tour not found.');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+    void fetchTourById(id);
+    void fetchLogs(id);
+    return () => {
+      clearSelectedTour();
+      clearLogs();
+    };
+  }, [id, fetchTourById, fetchLogs, clearSelectedTour, clearLogs]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (selectedTour) {
+      void fetchRoute(selectedTour.from, selectedTour.to, selectedTour.transportType);
+    }
+  }, [selectedTour, fetchRoute]);
 
   const handleUpdate = async (data: UpdateTourRequest) => {
     if (!id) return;
-    const updated = await updateTour(id, data);
-    setTour(updated);
+    await editTour(id, data);
     setEditing(false);
   };
 
   const handleDelete = async () => {
     if (!id || !confirm('Delete this tour and all its logs?')) return;
-    await deleteTour(id);
+    await removeTour(id);
     navigate('/');
   };
 
   const handleCreateLog = async (data: CreateTourLogRequest) => {
     if (!id) return;
-    const log = await createTourLog(id, data);
-    setLogs((prev) => [log, ...prev]);
+    await addLog(id, data);
     setShowLogForm(false);
   };
 
   const handleUpdateLog = async (data: CreateTourLogRequest) => {
     if (!id || !editingLog) return;
-    const updated = await updateTourLog(id, editingLog.id, data);
-    setLogs((prev) => prev.map((l) => l.id === updated.id ? updated : l));
+    await editLog(id, editingLog.id, data);
     setEditingLog(null);
   };
 
   const handleDeleteLog = async (logId: string) => {
     if (!id || !confirm('Delete this log?')) return;
-    await deleteTourLog(id, logId);
-    setLogs((prev) => prev.filter((l) => l.id !== logId));
+    await removeLog(id, logId);
   };
 
   if (loading) return <LoadingSpinner />;
-  if (error || !tour) return (
+  if (error || !selectedTour) return (
     <div className="page">
       <p className="error">{error || 'Tour not found.'}</p>
       <button className="btn-secondary mt-4" onClick={() => navigate('/')}>Back</button>
@@ -94,22 +79,30 @@ export default function TourDetailPage() {
       <button className="btn-secondary btn-sm mb-4" onClick={() => navigate('/')}>&larr; Back</button>
 
       {editing ? (
-        <TourForm initial={tour} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
+        <TourForm initial={selectedTour} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
       ) : (
         <div className="card mb-4">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700 }}>{tour.name}</h1>
-                <span className="badge">{tour.transportType}</span>
+                <h1 style={{ fontSize: 22, fontWeight: 700 }}>{selectedTour.name}</h1>
+                <span className="badge">{selectedTour.transportType}</span>
               </div>
-              <p style={{ color: '#6b7280', marginBottom: 6 }}>{tour.from} &rarr; {tour.to}</p>
-              {tour.description && <p style={{ fontSize: 14, color: '#374151', marginBottom: 8 }}>{tour.description}</p>}
+              <p style={{ color: '#6b7280', marginBottom: 6 }}>{selectedTour.from} &rarr; {selectedTour.to}</p>
+              {selectedTour.description && <p style={{ fontSize: 14, color: '#374151', marginBottom: 8 }}>{selectedTour.description}</p>}
+              {selectedTour.routeImagePath && (
+                <img
+                  src={`/api${selectedTour.routeImagePath}`}
+                  alt={`${selectedTour.name} route`}
+                  style={{ maxWidth: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 6, marginBottom: 8 }}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
               <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#6b7280' }}>
-                <span>{tour.distance > 0 ? `${tour.distance} km` : 'Distance: N/A'}</span>
-                {tour.estimatedTime > 0 && <span>~{tour.estimatedTime} min</span>}
-                <span>Popularity: {tour.popularity}</span>
-                <span>{tour.childFriendliness}</span>
+                <span>{selectedTour.distance > 0 ? `${selectedTour.distance} km` : 'Distance: N/A'}</span>
+                {selectedTour.estimatedTime > 0 && <span>~{selectedTour.estimatedTime} min</span>}
+                <span>Popularity: {selectedTour.popularity}</span>
+                <span>{selectedTour.childFriendliness}</span>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -123,8 +116,8 @@ export default function TourDetailPage() {
       <div style={{ marginBottom: 24 }}>
         <RouteMap
           coordinates={routeData?.coordinates as [number, number][] | null}
-          fromName={tour.from}
-          toName={tour.to}
+          fromName={selectedTour.from}
+          toName={selectedTour.to}
         />
       </div>
 

@@ -55,7 +55,7 @@ export default function TourLogForm({ initial, onSubmit, onCancel }: Props) {
   return (
     <form onSubmit={handleSubmit} className="card flex flex-col gap-3" style={{ marginBottom: 16 }}>
       <h4 style={{ fontWeight: 600 }}>{initial ? 'Edit Log' : 'Add Log'}</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label className="label">Date & Time *</label>
           <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} />

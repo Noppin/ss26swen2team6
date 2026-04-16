@@ -1,41 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getTours, createTour, deleteTour } from '../api/tours.api';
-import type { Tour, CreateTourRequest } from '../types/tour.types';
+import { useState, useEffect } from 'react';
+import { useTourStore } from '../store/tourStore';
+import type { CreateTourRequest } from '../types/tour.types';
 import TourList from '../components/tours/TourList';
 import TourForm from '../components/tours/TourForm';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 export default function ToursPage() {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tours, loading, error, fetchTours, addTour, removeTour } = useTourStore();
   const [showForm, setShowForm] = useState(false);
-  const [error, setError] = useState('');
 
-  const loadTours = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await getTours();
-      setTours(data);
-    } catch {
-      setError('Failed to load tours.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void loadTours(); }, [loadTours]);
+  useEffect(() => { void fetchTours(); }, [fetchTours]);
 
   const handleCreate = async (data: CreateTourRequest) => {
-    await createTour(data);
+    await addTour(data);
     setShowForm(false);
-    await loadTours();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this tour?')) return;
-    await deleteTour(id);
-    setTours((prev) => prev.filter((t) => t.id !== id));
+    await removeTour(id);
   };
 
   return (

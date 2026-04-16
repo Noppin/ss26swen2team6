@@ -49,7 +49,7 @@ export default function TourForm({ initial, onSubmit, onCancel }: Props) {
         <label className="label">Description</label>
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the tour..." rows={3} style={{ resize: 'vertical' }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label className="label">From *</label>
           <input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="e.g. Vienna" />

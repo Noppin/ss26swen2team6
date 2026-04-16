@@ -50,6 +50,20 @@ input:focus, textarea:focus, select:focus { border-color: #2563eb; }
 .page { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
 .page-wide { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
 
+@media (max-width: 640px) {
+  .page, .page-wide { padding: 16px 10px; }
+  .card { padding: 14px; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  input, textarea, select { font-size: 16px; } /* prevents iOS zoom */
+}
+
+@media (max-width: 480px) {
+  .grid-2col { grid-template-columns: 1fr !important; }
+  .hide-mobile { display: none !important; }
+  .stack-mobile { flex-direction: column !important; align-items: stretch !important; }
+  .stack-mobile button { width: 100%; }
+}
+
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .gap-2 { gap: 8px; }
